@@ -2,7 +2,7 @@
 
 ## Overview
 
-This API allows users to register by providing their personal information, including their first name, last name, email address, and password. The password is securely hashed before being stored in the database. Upon successful registration, a JSON Web Token (JWT) is generated for authentication purposes.
+This API allows users to register by providing their personal information, including their first name, last name, email address, and password. The password is securely hashed before being stored in the database. Upon successful registration, a JSON Web Token (JWT) is generated for authentication purposes. Additionally, users can log in using their email and password to receive a JWT for subsequent authenticated requests.
 
 ## Base URL
 
@@ -34,10 +34,11 @@ This API allows users to register by providing their personal information, inclu
 
 #### Example Request
 
-```json
-POST /api/v1/users/register
+
+POST /users/register
 Content-Type: application/json
 
+```json
 {
     "fullname": {
         "firstName": "sample-first",
@@ -102,6 +103,101 @@ Content-Type: application/json
     ```
     {
     "message": "Internal server error"
+    }
+
+    ```
+
+### Login User
+
+- **URL**: `/login`
+- **Method**: `POST`
+- **Authentication**: None required for this endpoint.
+
+### Request
+
+#### Headers
+
+- `Content-Type: application/json`
+
+#### Body Parameters
+
+| Parameter                | Type   | Required | Description                                      |
+|--------------------------|--------|----------|--------------------------------------------------|
+| `email`                  | String | Yes      | The email address of the user (must be valid).   |
+| `password`               | String | Yes      | The password for the user account (minimum 6 characters). |
+
+#### Example Request
+
+
+POST /users/login
+Content-Type: application/json
+
+```json
+{
+    "email": "abc@xyz.com",
+    "password": "Samplepassword"
+}
+```
+
+#### Sucess Response
+
+- Status Response: `200 OK`
+- Content:
+
+```
+{
+    "user": {
+        "_id": "60d5f484f1e2c4d0a8b45678",
+        "fullname": {
+            "firstName": "sample-first",
+            "lastName": "sample-last"
+        },
+        "email": "abc@xyz.com",
+        // Password field will not be returned due to select: false
+        "__v": 0
+    },
+    "token": "<JWT_token>"
+}
+```
+
+#### Error Response
+
+1. Validation Errors
+   - Status Code: `404 Bad Request`
+   - Content:
+```
+{
+    "errors": [
+        {
+            "msg": "Email is not valid",
+            "param": "email",
+            "location": "body"
+        },
+        {
+            "msg": "Password must be at least 6 characters long",
+            "param": "password",
+            "location": "body"
+        }
+    ]
+}
+```
+
+2. Unauthorized Errors
+   - Status Code: `401 Unauthorized`
+   - Content:
+    ```
+    {
+    "message": "Invalid email or password"
+    }
+
+    ```
+
+3. Internal Server Errors
+   - Status Code: `500 Internal Server Errors`
+   - Content:
+    ```
+    {
+    "message": "Internal Server Error"
     }
 
     ```
