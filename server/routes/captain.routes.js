@@ -1,6 +1,7 @@
 import express from 'express'
 import { body } from 'express-validator'
 import captainController from '../controllers/captain.controller.js'
+import authMiddleware from '../middlewares/auth.middleware.js'
 
 const router = express.Router()
 
@@ -15,5 +16,16 @@ router.post('/register', [
 ],
     captainController.registerCaptain
 )
+
+router.post('/login', [
+    body('email').isEmail().withMessage("Email is not valid"),
+    body('password').isLength({min: 6}).withMessage("Password must be at least 6 characters long"),
+],
+    captainController.loginCaptain
+)
+
+router.get('/profile', authMiddleware.authCaptain, captainController.getCaptainProfile)
+
+router.get('/logout', authMiddleware.authCaptain, captainController.logoutCaptain)
 
 export default router
