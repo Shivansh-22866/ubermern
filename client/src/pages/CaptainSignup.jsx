@@ -1,16 +1,26 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
+import { CaptainDataContext } from "../context/CaptainContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const CaptainSignUp = () => {
+  const navigate = useNavigate()
   const [visiblePassword, setVisiblePassword] = useState(false);
   const [visibleConfirmPassword, setVisibleConfirmPassword] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [userData, setUserData] = useState({})
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [vehicleColor, setVehicleColor] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [vehicleCapacity, setVehicleCapacity] = useState("");
+  const [vehicleType, setVehicleType] = useState("car"); // Default value
+  const [errorMessage, setErrorMessage] = useState("");
+  const [userData, setUserData] = useState({});
+
+  const { captain, setCaptain } = useContext(CaptainDataContext);
 
   const togglePasswordVisibility = () => {
     setVisiblePassword(!visiblePassword);
@@ -20,9 +30,9 @@ const CaptainSignUp = () => {
     setVisibleConfirmPassword(!visibleConfirmPassword);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Check if passwords match
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -32,23 +42,46 @@ const CaptainSignUp = () => {
     // Clear error message if passwords match
     setErrorMessage("");
 
+    // Collect user data including vehicle information
+    const newCaptainData = {
+      fullname: { firstName: firstName, lastName: lastName },
+      email: email,
+      password: password,
+      vehicle: {
+        color: vehicleColor,
+        plate: vehiclePlate,
+        capacity: parseInt(vehicleCapacity) || 1,
+        vehicleType: vehicleType,
+      },
+    };
 
-    const newUserData = {fullname: {firstName: firstName, lastName: lastName}, email: email, password: password}
-    console.log("Newdata: ",newUserData)
-    setUserData(newUserData)
-    
+    console.log("New data: ", newCaptainData);
 
-    console.log(firstName, lastName, email, password);
-    console.log("User Data: ",userData)
-    
     // Here you can handle the signup logic (e.g., API call)
 
+    const response = await axios.post(
+      `${import.meta.env.VITE_BASE_URL}/captains/register`,
+      newCaptainData)
+
+    console.log(response.status)
+
+    if(response.status === 201) {
+      const data = response.data
+      setCaptain(data.captain)
+      localStorage.setItem('token', data.token)
+      navigate('/captain-home')
+    }
+
     // Resetting form fields
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setVehicleColor("");
+    setVehiclePlate("");
+    setVehicleCapacity("");
+    setVehicleType("car"); // Reset to default
   };
 
   return (
@@ -56,9 +89,9 @@ const CaptainSignUp = () => {
       <div>
         <img src="/uberlogo.png" className="w-16 mb-10" alt="Uber Logo" />
         <form onSubmit={handleSubmit}>
-          <div className="flex space-x-4 mb-7">
+          <div className="flex space-x-4 mb-2">
             <div className="w-1/2">
-              <h3 className="text-lg font-medium mb-2">First Name</h3>
+              <h3 className="text-lg font-medium mb-1">First Name</h3>
               <input
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -69,7 +102,7 @@ const CaptainSignUp = () => {
               />
             </div>
             <div className="w-1/2">
-              <h3 className="text-lg font-medium mb-2">Last Name</h3>
+              <h3 className="text-lg font-medium mb-1">Last Name</h3>
               <input
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -80,17 +113,17 @@ const CaptainSignUp = () => {
               />
             </div>
           </div>
-          <h3 className="text-lg font-medium mb-2">Email</h3>
+          <h3 className="text-lg font-medium mb-1">Email</h3>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-gray-200 mb-7 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration-200 focus:outline-1 focus:outline-amber-500 focus:shadow-lg"
+            className="bg-gray-200 mb-2 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration-200 focus:outline-1 focus:outline-amber-500 focus:shadow-lg"
             required
             placeholder="email@example.com"
             type="email"
           />
-          <h3 className="text-lg font-medium mb-2">Password</h3>
-          <div className="relative mb-7">
+          <h3 className="text-lg font-medium mb-1">Password</h3>
+          <div className="relative mb-2">
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -105,7 +138,8 @@ const CaptainSignUp = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600"
             >
               {visiblePassword ? (
-                <svg
+                // Eye icon for visible state
+<svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
@@ -117,7 +151,8 @@ const CaptainSignUp = () => {
                 <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
               </svg>
               ) : (
-                <svg
+                // Eye icon for hidden state
+<svg
                   xmlns="http://www.w3.org/2000/svg"
                   x="0px"
                   y="0px"
@@ -130,8 +165,8 @@ const CaptainSignUp = () => {
               )}
             </button>
           </div>
-          <h3 className="text-lg font-medium mb-2">Confirm Password</h3>
-          <div className="relative mb-7">
+          <h3 className="text-lg font-medium mb-1">Confirm Password</h3>
+          <div className="relative mb-2">
             <input
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -146,21 +181,21 @@ const CaptainSignUp = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600"
             >
               {visibleConfirmPassword ? (
-                // Add eye icon for visible state
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  class="bi bi-eye"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                </svg>
+                // Eye icon for visible state
+<svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                class="bi bi-eye"
+                viewBox="0 0 16 16"
+              >
+                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+              </svg>
               ) : (
-                // Add eye icon for hidden state
-                <svg
+                // Eye icon for hidden state
+<svg
                   xmlns="http://www.w3.org/2000/svg"
                   x="0px"
                   y="0px"
@@ -179,21 +214,76 @@ const CaptainSignUp = () => {
             <p className="text-red-500 text-center mb-4">{errorMessage}</p>
           )}
 
+          {/* Vehicle Information Fields */}
+          <div className="flex space-x-4 mb-2">
+            <div className="w-1/2">
+              <h3 className="text-lg font-medium mb-1">Vehicle Color</h3>
+              <input
+                value={vehicleColor}
+                onChange={(e) => setVehicleColor(e.target.value)}
+                className="bg-gray-200 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration-200 focus:outline-none focus:ring focus:ring-yellow"
+                required
+                placeholder="Enter Vehicle Color"
+              />
+            </div>
+            <div className="w-1/2">
+              <h3 className="text-lg font-medium mb-1">Vehicle Capacity</h3>
+              <input
+                value={vehicleCapacity}
+                onChange={(e) => setVehicleCapacity(e.target.value)}
+                type="number"
+                min="1"
+                required
+                placeholder="Enter Vehicle Capacity"
+                className="bg-gray-200 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration-200 focus:outline-none focus:ring focus:ring-yellow"
+              />
+            </div>
+          </div>
+
+          <h3 className="text-lg font-medium mb-2">Vehicle Plate Number</h3>
+          <input
+            value={vehiclePlate}
+            onChange={(e) => setVehiclePlate(e.target.value)}
+            className="bg-gray-200 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration-200 focus:outline-none focus:ring focus:ring-yellow mb-2"
+            required
+            placeholder="Enter Vehicle Plate Number"
+          />
+
+          <h3 className="text-lg font-medium mb-2">Vehicle Type</h3>
+          <select
+            value={vehicleType}
+            onChange={(e) => setVehicleType(e.target.value)}
+            required
+            className="bg-gray-200 rounded px-4 py-2 border w-full text-lg placeholder:text-base transition-shadow duration=200 focus:outline-none focus:ring focus:ring-yellow mb-8"
+          >
+            <option value="car">Car</option>
+            <option value="motorcycle">Motorcycle</option>
+            <option value="auto">Auto</option>
+          </select>
+
+          {/* Submit Button */}
           <button
             className="bg-black text-white py-3 rounded w-full font-semibold"
             type="submit"
           >
-            Sign Up
+            Create Captain Account
           </button>
-          <p className="text-center py-8">
+
+          {/* Link to Login Page */}
+          <p className="text-center py-2">
             Already have an account?{" "}
-            <Link to={"/captainlogin"} className="text-blue-700">Login here</Link>
+            <Link to={"/captainlogin"} className="text-blue-700">
+              Login here
+            </Link>
           </p>
         </form>
       </div>
+
       {/* Footer Text */}
-      <div className='text-center py-4'>
-        <p>© {new Date().getFullYear()} Your Company Name. All rights reserved.</p>
+      <div className="text-center py=4">
+        <p>
+          © {new Date().getFullYear()} Your Company Name. All rights reserved.
+        </p>
       </div>
     </div>
   );

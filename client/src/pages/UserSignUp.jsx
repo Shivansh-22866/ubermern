@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from 'axios'
+import {UserDataContext} from "../context/UserContext";
 
 const UserSignUp = () => {
   const [visiblePassword, setVisiblePassword] = useState(false);
@@ -12,6 +14,10 @@ const UserSignUp = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [userData, setUserData] = useState({})
 
+  const navigate = useNavigate()
+
+  const {user, setUser} = React.useContext(UserDataContext)
+
   const togglePasswordVisibility = () => {
     setVisiblePassword(!visiblePassword);
   };
@@ -20,7 +26,7 @@ const UserSignUp = () => {
     setVisibleConfirmPassword(!visibleConfirmPassword);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Check if passwords match
@@ -33,10 +39,18 @@ const UserSignUp = () => {
     setErrorMessage("");
 
 
+    // Here you can handle the signup logic (e.g., API call)
     const newUserData = {fullname: {firstName: firstName, lastName: lastName}, email: email, password: password}
     setUserData(newUserData)
+
+    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, newUserData)
     
-    // Here you can handle the signup logic (e.g., API call)
+    if(response.status == 201) {
+      const data = response.data
+      setUser(data.user)
+      localStorage.setItem('token', data.token)
+      navigate('/home')
+    }
 
     // Resetting form fields
     setFirstName('');
